@@ -4,7 +4,7 @@ part of 'pay_bloc.dart';
 class PayState {
   final double? amountToPay;
   final String? currency;
-  final bool? isCardActive;
+  final bool isCardActive;
   final CreditCardModel? card;
 
   PayState({
