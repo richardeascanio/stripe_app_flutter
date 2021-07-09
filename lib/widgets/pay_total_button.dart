@@ -4,6 +4,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:stripe_app/bloc/pay/pay_bloc.dart';
+import 'package:stripe_app/helpers/helpers.dart';
+import 'package:stripe_app/services/stripe_service.dart';
+import 'package:stripe_payment/stripe_payment.dart';
 
 class PayTotalButton extends StatelessWidget {
 
@@ -11,6 +14,7 @@ class PayTotalButton extends StatelessWidget {
   Widget build(BuildContext context) {
 
     final width = MediaQuery.of(context).size.width;
+    final bloc = BlocProvider.of<PayBloc>(context);
 
     return Container(
       width: width,
@@ -38,7 +42,7 @@ class PayTotalButton extends StatelessWidget {
                 ),
               ),
               Text(
-                '250.55 USD',
+                '${bloc.state.amountToPay} ${bloc.state.currency}',
                 style: TextStyle(
                   fontSize: 20,
                   fontWeight: FontWeight.bold
@@ -94,7 +98,39 @@ class _PayButton extends StatelessWidget {
           ),
         ],
       ),
-      onPressed: () {},
+      onPressed: () async {
+        showLoading(context);
+        final stripeService = StripeService();
+        final bloc = BlocProvider.of<PayBloc>(context);
+        final card = bloc.state.card!;
+
+        final response = await stripeService.payWithExistingCard(
+          amount: bloc.state.amountToPayString, 
+          currency: bloc.state.currency!, 
+          card: CreditCard(
+            number: card.cardNumber,
+            name: card.cardHolderName,
+            expMonth: int.parse(card.expDate.split('/')[0]),
+            expYear: int.parse(card.expDate.split('/')[1]),
+          )
+        );
+
+        Navigator.pop(context);
+
+        if (response.ok) {
+          showAlert(
+            context, 
+            'Tarjeta ok', 
+            'Todo correcto'
+          );
+        } else {
+          showAlert(
+            context, 
+            'Algo salió mal', 
+            response.message!
+          );
+        }
+      },
     );
   }
 
