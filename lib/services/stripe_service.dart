@@ -70,14 +70,66 @@ class StripeService {
 
       return response;
     } catch (e) {
-      return StripeCustomResponse(ok: false, message: e.toString());
+      return StripeCustomResponse(
+        ok: false, 
+        message: e.toString()
+      );
     }
   }
 
-  Future payWithAppleAndGooglePay({
+  Future<StripeCustomResponse> payWithAppleAndGooglePay({
     required String amount,
     required String currency,
-  }) async {}
+  }) async {
+
+    try {
+
+      final newAmount = double.parse(amount)/100;
+      
+      final token = await StripePayment.paymentRequestWithNativePay(
+        androidPayOptions: AndroidPayPaymentRequest(
+          currencyCode: currency,
+          totalPrice: amount
+        ), 
+        applePayOptions: ApplePayPaymentOptions(
+          countryCode: 'US',
+          currencyCode: currency,
+          items: [
+            ApplePayItem(
+              label: 'Total a pagar',
+              amount: '$newAmount'
+            )
+          ]
+        )
+      );
+
+      final paymentMethod = await StripePayment.createPaymentMethod(
+        PaymentMethodRequest(
+          card: CreditCard(
+            token: token.tokenId
+          )
+        )
+      );
+
+      final response = await this._doPayment(
+        amount: amount, 
+        currency: currency, 
+        paymentMethod: paymentMethod
+      );
+
+      await StripePayment.completeNativePayRequest();
+
+      return response;
+
+    } catch (e) {
+      print(e.toString());
+      return StripeCustomResponse(
+        ok: false, 
+        message: e.toString()
+      );
+    }
+
+  }
 
   Future<PaymentIntentResponse> _createPaymentIntent({
     required String amount,
@@ -99,6 +151,7 @@ class StripeService {
       return PaymentIntentResponse.fromJson(response.data);
 
     } catch (e) {
+      print(e.toString());
       return PaymentIntentResponse(
         id: '',
         object: '',
@@ -152,4 +205,5 @@ class StripeService {
       return StripeCustomResponse(ok: false, message: e.toString());
     }
   }
+
 }

@@ -99,37 +99,7 @@ class _PayButton extends StatelessWidget {
         ],
       ),
       onPressed: () async {
-        showLoading(context);
-        final stripeService = StripeService();
-        final bloc = BlocProvider.of<PayBloc>(context);
-        final card = bloc.state.card!;
-
-        final response = await stripeService.payWithExistingCard(
-          amount: bloc.state.amountToPayString, 
-          currency: bloc.state.currency!, 
-          card: CreditCard(
-            number: card.cardNumber,
-            name: card.cardHolderName,
-            expMonth: int.parse(card.expDate.split('/')[0]),
-            expYear: int.parse(card.expDate.split('/')[1]),
-          )
-        );
-
-        Navigator.pop(context);
-
-        if (response.ok) {
-          showAlert(
-            context, 
-            'Tarjeta ok', 
-            'Todo correcto'
-          );
-        } else {
-          showAlert(
-            context, 
-            'Algo salió mal', 
-            response.message!
-          );
-        }
+        _processCardPayment(context);
       },
     );
   }
@@ -158,8 +128,65 @@ class _PayButton extends StatelessWidget {
           ),
         ],
       ),
-      onPressed: () {},
+      onPressed: () async {
+        
+        final stripeService = StripeService();
+        final bloc = BlocProvider.of<PayBloc>(context);
+
+        final response = await stripeService.payWithAppleAndGooglePay(
+          amount: bloc.state.amountToPayString, 
+          currency: bloc.state.currency!
+        );
+
+        if (response.ok) {
+          showAlert(
+            context, 
+            'Tarjeta ok', 
+            'Todo correcto'
+          );
+        } else {
+          showAlert(
+            context, 
+            'Algo salió mal', 
+            response.message!
+          );
+        }
+      },
     );
+  }
+
+  _processCardPayment(BuildContext context) async {
+    showLoading(context);
+    final stripeService = StripeService();
+    final bloc = BlocProvider.of<PayBloc>(context);
+    final card = bloc.state.card!;
+
+    final response = await stripeService.payWithExistingCard(
+      amount: bloc.state.amountToPayString, 
+      currency: bloc.state.currency!, 
+      card: CreditCard(
+        number: card.cardNumber,
+        name: card.cardHolderName,
+        expMonth: int.parse(card.expDate.split('/')[0]),
+        expYear: int.parse(card.expDate.split('/')[1]),
+      )
+    );
+
+    Navigator.pop(context);
+
+    if (response.ok) {
+      showAlert(
+        context, 
+        'Tarjeta ok', 
+        'Todo correcto'
+      );
+    } else {
+      showAlert(
+        context, 
+        'Algo salió mal', 
+        response.message!
+      );
+    }
   }
 }
 
