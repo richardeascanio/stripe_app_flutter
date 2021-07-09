@@ -7,6 +7,8 @@ class PayState {
   final bool isCardActive;
   final CreditCardModel? card;
 
+  String get amountToPayString => '${(this.amountToPay! * 100).floor()}';
+
   PayState({
     this.amountToPay = 375.55, 
     this.currency = 'USD', 
